@@ -1,36 +1,56 @@
 # Git Tic-Tac-Toe
 
-This is a game that doesn't have any code. It is just cosists of a text file. You play the game by editing the text file and committing it.
+A turn-based game where moves are git commits and rules are enforced by GitHub Actions. Anyone can play - no collaborator access needed.
 
-Technically the game rules are enforced by GitHub Actions and branch protection rules. Basically the rules of the game are enforced by validation rules.
+## How It Works
 
-## Playing the Game
+The game state lives in `game.json`. Players take turns by opening Pull Requests that modify this file. A GitHub Action validates each move and **auto-merges** if valid.
 
-### Starting a Game
+**The key insight:** GitHub branch protection requires status checks to pass before merging. By making the status check a game rule validator that auto-merges, we turn GitHub into a trustless game server.
 
-A repo admin creates a game branch:
+### Turn Enforcement
 
-```bash
-git checkout main
-git checkout -b game/alice-vs-bob
-# Edit game.json with player GitHub usernames
-git push -u origin game/alice-vs-bob
+The Action checks that the PR author's GitHub username matches the player whose turn it is. Alice cannot submit a move for Bob - the PR author is cryptographically tied to their GitHub account.
+
+### Architecture
+
+```
+main                         <- Template + workflows (protected)
+ └── game/alice-vs-bob       <- Game instance (auto-validated)
+      ├── fork PR from alice <- Validated & auto-merged
+      ├── fork PR from bob   <- Validated & auto-merged
+      └── ...
 ```
 
-### Making a Move
+### Security Model
 
-```bash
-git fetch origin
-git checkout game/alice-vs-bob
-git pull
-git checkout -b move/alice-1
-# Edit game.json: place your symbol, update turn
-git add game.json
-git commit -m "X takes center"
-git push -u origin move/alice-1
-gh pr create --base game/alice-vs-bob --title "X takes center"
-# Wait for CI to pass, then merge
-```
+The workflow uses `pull_request_target` to safely handle fork PRs:
+- Runs with base repo permissions (can merge)
+- Only checks out trusted base repo code
+- Fetches PR's `game.json` via API (never executes fork code)
+
+## Starting a New Game
+
+Anyone can start a game by opening an Issue:
+
+**Title:** `new game: alice vs bob`
+
+The Action automatically creates the game branch. No collaborator access needed.
+
+## Making a Move
+
+1. Fork the repository
+2. Fetch the game branch:
+   ```bash
+   git fetch origin game/alice-vs-bob
+   git checkout -b my-move origin/game/alice-vs-bob
+   ```
+3. Edit `game.json`:
+   - Place your symbol (X or O) in an empty cell
+   - Update `turn` to the other player's symbol
+   - If you won, set `winner` to your symbol
+4. Push to your fork and open a PR **targeting the game branch**
+5. If valid, the Action auto-merges. If invalid, it fails with an explanation.
 
 ### Board Layout
 
@@ -53,54 +73,33 @@ gh pr create --base game/alice-vs-bob --title "X takes center"
 }
 ```
 
-- `board`: Array of 9 cells (null, "X", or "O")
-- `players`: Maps symbols to GitHub usernames
-- `turn`: Which symbol plays next
-- `winner`: null, "X", "O", or "draw" when game ends
+## GitHub Setup (for your own copy)
 
-## How It Works
-
-The game state lives in `game.json`. Players take turns by opening Pull Requests that modify this file. A GitHub Action validates each move before it can be merged.
-
-**The key insight:** GitHub branch protection can require status checks to pass before merging. By making the status check a game rule validator, we turn GitHub into a game server that enforces turn order and move legality.
-
-### Architecture
-
-```
-main                         <- Template + workflow (protected)
- └── game/alice-vs-bob       <- Game instance (protected, requires PR + CI)
-      ├── move/alice-1       <- Alice's PR branch
-      ├── move/bob-1         <- Bob's PR branch
-      └── ...
-```
-
-- **`main`**: Contains the game template and validation workflow. Protected to prevent tampering.
-- **`game/*`**: Each branch is an independent game. Protected by rulesets requiring validated PRs.
-- **`move/*`**: Temporary branches for submitting moves via PR.
-
-### GitHub Branch Protection Setup
-
-Two rulesets enforce the game:
+### Branch Protection Rulesets
 
 **1. `protect-main`** (targets: default branch)
 - Require pull request before merging
 - Block force pushes
-- *Purpose: Prevent players from modifying the validation rules*
+- *Prevents tampering with validation rules*
 
 **2. `game-branches`** (targets: `game/**`)
-- Require pull request before merging
 - Require status checks to pass: `validate`
 - Block force pushes
-- Bypass: repo owner (to create new games)
-- *Purpose: Force all moves through CI validation*
+- Bypass: repo owner (to manually create games)
+- *Note: With auto-merge, the "require PR" rule is optional*
 
-### Validation Workflow
+### First-Time Contributors
 
-The GitHub Action (`.github/workflows/validate-move.yml`) runs on every PR to a `game/*` branch and checks:
+GitHub may require approval for first-time contributors before Actions run. Check **Settings → Actions → General → Fork pull request workflows** and adjust as needed.
 
-1. **Turn order**: PR author must match the player whose turn it is
-2. **Single move**: Exactly one board cell changed
-3. **Valid placement**: Cell was empty, correct symbol used
-4. **State consistency**: Turn advanced correctly, winner detected if applicable
+### Required Permissions
 
-If any check fails, the PR cannot be merged.
+The workflow needs write access to merge PRs. Ensure **Settings → Actions → General → Workflow permissions** is set to "Read and write permissions".
+
+## Rules Enforced by CI
+
+- ✓ PR author must match the player whose turn it is
+- ✓ Exactly one empty cell filled per turn
+- ✓ Correct symbol (X or O) placed
+- ✓ Turn advances to other player
+- ✓ Winner/draw correctly detected
