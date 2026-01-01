@@ -31,11 +31,9 @@ The workflow uses `pull_request_target` to safely handle fork PRs:
 
 ## Starting a New Game
 
-Anyone can start a game by opening an Issue:
+[**Click here to start a new game**](../../issues/new?title=new%20game:%20player1%20vs%20player2)
 
-**Title:** `new game: alice vs bob`
-
-The Action automatically creates the game branch. No collaborator access needed.
+Just replace `player1` and `player2` with GitHub usernames. The Action creates the game branch automatically.
 
 ## Making a Move
 
