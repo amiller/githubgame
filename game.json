@@ -1,19 +1,6 @@
 {
-  "board": [
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null
-  ],
-  "players": {
-    "X": "amiller",
-    "O": "amiller"
-  },
-  "turn": "X",
+  "board": [null, null, null, null, "X", null, null, null, null],
+  "players": { "X": "amiller", "O": "amiller" },
+  "turn": "O",
   "winner": null
 }
