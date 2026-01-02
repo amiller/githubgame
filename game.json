@@ -4,7 +4,7 @@
     null,
     null,
     null,
-    null,
+    "X",
     null,
     null,
     null,
@@ -14,6 +14,6 @@
     "X": "github-actions[bot]",
     "O": "github-actions[bot]"
   },
-  "turn": "X",
+  "turn": "O",
   "winner": null
 }
