@@ -9,23 +9,18 @@ Play tic-tac-toe by editing a JSON file. No servers, no frontend—just git.
 A bot creates the game branch. You'll get notified on every move.
 
 <!-- LEADERBOARD:START -->
-### 🎮 Active Games
-
-| Players | Last Move |
-|---------|----------|
-| amiller vs amiller [#42](../../issues/42) | Jan 2 |
-
 ### 🏁 Recent Games
 
 | Players | Result | Date |
 |---------|--------|------|
+| amiller vs amiller [#42](../../issues/42) | 🤝 | Jan 2 |
 | amiller vs amiller [#32](../../issues/32) | 🤝 | Jan 2 |
 
 ### 👑 Top Players
 
 | Player | W | L | D |
 |--------|---|---|---|
-| amiller | 0 | 0 | 2 |
+| amiller | 0 | 0 | 4 |
 <!-- LEADERBOARD:END -->
 
 ## Make a Move
