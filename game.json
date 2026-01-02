@@ -1,6 +1,19 @@
 {
-  "board": [null, null, null, null, null, null, null, null, null],
-  "players": { "X": "amiller", "O": "xiaziyna" },
+  "board": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "players": {
+    "X": "github-actions[bot]",
+    "O": "github-actions[bot]"
+  },
   "turn": "X",
   "winner": null
 }
