@@ -20,7 +20,6 @@ jobs:
             const testId = `test-${Date.now()}`;
             const branch = `test-game/${testId}`;
 
-            // Create test branch from main
             const { data: mainRef } = await github.rest.git.getRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -34,7 +33,6 @@ jobs:
               sha: mainRef.object.sha
             });
 
-            // Set up game state (github-actions[bot] vs itself)
             const gameState = {
               board: [null,null,null,null,null,null,null,null,null],
               players: { X: 'github-actions[bot]', O: 'github-actions[bot]' },
@@ -60,17 +58,16 @@ jobs:
             });
 
             core.setOutput('branch', branch);
-            core.setOutput('testId', testId);
             console.log(`Created test branch: ${branch}`);
 
       - name: Test valid move
+        id: test-valid
         uses: actions/github-script@v7
         with:
           script: |
             const branch = '${{ steps.setup.outputs.branch }}';
             const moveBranch = `${branch}-valid-move`;
 
-            // Create move branch
             const { data: baseRef } = await github.rest.git.getRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -84,7 +81,6 @@ jobs:
               sha: baseRef.object.sha
             });
 
-            // Make valid move: X takes center
             const validMove = {
               board: [null,null,null,null,'X',null,null,null,null],
               players: { X: 'github-actions[bot]', O: 'github-actions[bot]' },
@@ -109,7 +105,6 @@ jobs:
               branch: moveBranch
             });
 
-            // Create PR
             const { data: pr } = await github.rest.pulls.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -119,38 +114,50 @@ jobs:
               body: 'Integration test - valid move'
             });
 
-            console.log(`Created PR #${pr.number} for valid move test`);
+            console.log(`Created PR #${pr.number}`);
+            core.setOutput('pr', pr.number);
+            core.setOutput('moveBranch', moveBranch);
 
-            // Wait for validation workflow
-            await new Promise(r => setTimeout(r, 20000));
+      - name: Wait for validation
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = ${{ steps.test-valid.outputs.pr }};
 
-            // Check PR status
-            const { data: checks } = await github.rest.checks.listForRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: moveBranch
-            });
+            // Poll for check status
+            for (let i = 0; i < 12; i++) {
+              await new Promise(r => setTimeout(r, 10000));
 
-            const validateCheck = checks.check_runs.find(c => c.name === 'validate');
-            if (!validateCheck) {
-              // Try waiting longer
-              await new Promise(r => setTimeout(r, 15000));
-              const { data: checks2 } = await github.rest.checks.listForRef({
+              const { data: prData } = await github.rest.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: moveBranch
+                pull_number: pr
               });
-              const validateCheck2 = checks2.check_runs.find(c => c.name === 'validate');
-              if (!validateCheck2 || validateCheck2.conclusion !== 'success') {
-                core.setFailed(`Valid move should pass validation. Status: ${validateCheck2?.conclusion || 'not found'}`);
-                return;
+
+              const { data: checks } = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: prData.head.sha
+              });
+
+              console.log(`Poll ${i+1}: Found ${checks.check_runs.length} checks`);
+              for (const check of checks.check_runs) {
+                console.log(`  - ${check.name}: ${check.status} / ${check.conclusion}`);
               }
-            } else if (validateCheck.conclusion !== 'success') {
-              core.setFailed(`Valid move should pass validation. Status: ${validateCheck.conclusion}`);
-              return;
+
+              const validateCheck = checks.check_runs.find(c => c.name === 'validate');
+              if (validateCheck && validateCheck.status === 'completed') {
+                if (validateCheck.conclusion === 'success') {
+                  console.log('✓ Valid move test PASSED');
+                  return;
+                } else {
+                  core.setFailed(`Valid move should pass. Got: ${validateCheck.conclusion}`);
+                  return;
+                }
+              }
             }
 
-            console.log('✓ Valid move test passed');
+            core.setFailed('Timeout waiting for validation check');
 
       - name: Cleanup
         if: always()
@@ -158,35 +165,40 @@ jobs:
         with:
           script: |
             const branch = '${{ steps.setup.outputs.branch }}';
+            const moveBranch = '${{ steps.test-valid.outputs.moveBranch }}' || `${branch}-valid-move`;
 
-            // Close any open PRs
-            const { data: prs } = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              head: `${context.repo.owner}:${branch}`
-            });
-
-            for (const pr of prs) {
-              await github.rest.pulls.update({
+            // Close PRs
+            try {
+              const { data: prs } = await github.rest.pulls.list({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                pull_number: pr.number,
-                state: 'closed'
+                state: 'open'
               });
+
+              for (const pr of prs.filter(p => p.head.ref.startsWith('test-game/'))) {
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  state: 'closed'
+                });
+                console.log(`Closed PR #${pr.number}`);
+              }
+            } catch (e) {
+              console.log(`Error closing PRs: ${e.message}`);
             }
 
-            // Delete test branches
-            const branches = [branch, `${branch}-valid-move`];
-            for (const b of branches) {
+            // Delete branches
+            for (const b of [branch, moveBranch]) {
+              if (!b) continue;
               try {
                 await github.rest.git.deleteRef({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   ref: `heads/${b}`
                 });
-                console.log(`Deleted branch: ${b}`);
+                console.log(`Deleted: ${b}`);
               } catch (e) {
-                console.log(`Branch ${b} may not exist: ${e.message}`);
+                console.log(`Could not delete ${b}: ${e.message}`);
               }
             }
