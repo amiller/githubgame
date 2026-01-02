@@ -6,7 +6,17 @@
       "draws": 2
     }
   },
-  "activeGames": [],
+  "activeGames": [
+    {
+      "players": [
+        "amiller",
+        "amiller"
+      ],
+      "branch": "game/amiller-vs-amiller-42-3qxs9d",
+      "issue": 42,
+      "lastMove": "2026-01-02T02:42:37.239Z"
+    }
+  ],
   "recentGames": [
     {
       "players": [
