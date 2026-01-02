@@ -1,6 +1,6 @@
 {
   "board": [
-    null,
+    "O",
     "X",
     null,
     null,
@@ -14,7 +14,7 @@
     "X": "amiller",
     "O": "amiller"
   },
-  "turn": "O",
+  "turn": "X",
   "winner": null,
   "issue": 29
 }
