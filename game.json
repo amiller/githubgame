@@ -5,7 +5,7 @@
     "O",
     "O",
     "O",
-    null,
+    "X",
     "X",
     null,
     null
@@ -14,7 +14,7 @@
     "X": "amiller",
     "O": "gabearro"
   },
-  "turn": "X",
+  "turn": "O",
   "winner": null,
   "issue": 54
 }
