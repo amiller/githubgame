@@ -8,13 +8,13 @@
     "X",
     "X",
     null,
-    null
+    "O"
   ],
   "players": {
     "X": "amiller",
     "O": "gabearro"
   },
-  "turn": "O",
+  "turn": "X",
   "winner": null,
   "issue": 54
 }
