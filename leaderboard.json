@@ -3,21 +3,26 @@
     "amiller": {
       "wins": 0,
       "losses": 0,
-      "draws": 4
+      "draws": 5
+    },
+    "gabearro": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 1
     }
   },
-  "activeGames": [
+  "activeGames": [],
+  "recentGames": [
     {
       "players": [
         "amiller",
         "gabearro"
       ],
+      "winner": "draw",
       "branch": "game/amiller-vs-gabearro-54-8gqsef",
       "issue": 54,
-      "lastMove": "2026-01-03T01:39:47.064Z"
-    }
-  ],
-  "recentGames": [
+      "timestamp": "2026-01-03T03:29:52.081Z"
+    },
     {
       "players": [
         "amiller",
