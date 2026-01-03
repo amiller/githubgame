@@ -13,7 +13,7 @@ A bot creates the game branch. You'll get notified on every move.
 
 | Players | Last Move |
 |---------|----------|
-| amiller vs gabearro [#54](../../issues/54) | Jan 2 |
+| amiller vs gabearro [#54](../../issues/54) | Jan 3 |
 
 ### 🏁 Recent Games
 
